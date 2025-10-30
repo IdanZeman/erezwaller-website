@@ -13,3 +13,11 @@ export interface Project {
   images?: string[] // Array of multiple image URLs
   created_at?: string
 }
+
+export interface Testimonial {
+  id: number
+  name: string
+  text: string
+  rating?: number
+  created_at?: string
+}

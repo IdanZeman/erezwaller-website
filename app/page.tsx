@@ -3,9 +3,9 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Phone, Mail, ShieldCheck, Hammer, Wrench, Ruler, Paintbrush, Building2, ChevronLeft, ChevronRight, Menu, X, Truck } from 'lucide-react'
+import { Phone, Mail, ShieldCheck, Hammer, Wrench, Ruler, Paintbrush, Building2, ChevronLeft, ChevronRight, Menu, X, Truck, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { supabase, type Project } from '@/lib/supabase'
+import { supabase, type Project, type Testimonial } from '@/lib/supabase'
 
 // Default project data (fallback)
 const defaultProjects: Project[] = [
@@ -58,6 +58,7 @@ export default function HandymanLandingPage() {
   const [selectedProject, setSelectedProject] = useState<number | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [projects, setProjects] = useState(defaultProjects)
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
 
   // Auto-advance images every 2 seconds
   useEffect(() => {
@@ -100,7 +101,28 @@ export default function HandymanLandingPage() {
       }
     }
 
+    const loadTestimonials = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('testimonials')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error loading testimonials:', error)
+          return
+        }
+        
+        if (data && data.length > 0) {
+          setTestimonials(data)
+        }
+      } catch (err) {
+        console.error('Error:', err)
+      }
+    }
+
     loadProjects()
+    loadTestimonials()
   }, [])
 
   return (
@@ -213,11 +235,6 @@ export default function HandymanLandingPage() {
             <p className="text-lg text-slate-300 mb-10 max-w-3xl mx-auto">
               מעל 15 שנות ניסיון בביצוע וניהול פרויקטי שיפוצים, תחזוקה ובנייה לדירות, בתים פרטיים ועסקים
             </p>
-            <a href="#contact">
-              <Button size="lg" className="bg-[#f0001c] hover:bg-[#d00018] text-white font-bold text-lg px-10 py-6 h-auto rounded-full">
-                קבל הצעת מחיר חינם
-              </Button>
-            </a>
           </motion.div>
         </div>
       </section>
@@ -445,16 +462,21 @@ export default function HandymanLandingPage() {
             <p className="text-xl text-slate-600">מה הלקוחות שלנו אומרים</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {text: 'ארז נתן שירות מדהים, עמד בזמנים והבית נראה כמו חדש. ממליץ בחום!', name: 'דנה, תל אביב'},
-              {text: 'הצעת מחיר שקופה וביצוע מוקפד עד הפרט האחרון. מקצועיות ברמה הגבוהה ביותר.', name: 'אורן, רמת גן'},
-              {text: 'רציתי להודות לך ולצוות על ההתקנה המושלמת. הטכנאי היה נחמד, מקצועי ועשה עבודה מעולה.', name: 'יעל, ירושלים'},
-            ].map((t, idx) => (
-              <div key={idx} className="bg-white p-8 rounded-lg shadow-md">
+            {testimonials.length > 0 ? testimonials.map((t) => (
+              <div key={t.id} className="bg-white p-8 rounded-lg shadow-md">
+                <div className="flex gap-1 mb-4 text-yellow-400">
+                  {[...Array(t.rating || 5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-current" />
+                  ))}
+                </div>
                 <p className="text-slate-700 leading-relaxed mb-4 text-lg italic">"{t.text}"</p>
                 <p className="font-bold text-slate-900">— {t.name}</p>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full text-center text-slate-500">
+                <p>אין המלצות זמינות כרגע</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

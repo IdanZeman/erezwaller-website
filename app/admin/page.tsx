@@ -3,25 +3,29 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Plus, Edit2, Trash2, Save, Upload, Loader2 } from 'lucide-react'
-import { supabase, Project } from '@/lib/supabase'
+import { X, Plus, Edit2, Trash2, Save, Upload, Loader2, Star } from 'lucide-react'
+import { supabase, Project, Testimonial } from '@/lib/supabase'
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState<'projects' | 'testimonials'>('projects')
   const [projects, setProjects] = useState<Project[]>([])
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadingMultiple, setUploadingMultiple] = useState(false)
 
-  // Load projects from Supabase
+  // Load projects and testimonials from Supabase
   useEffect(() => {
     if (isAuthenticated) {
       loadProjects()
+      loadTestimonials()
     }
   }, [isAuthenticated])
 
@@ -36,6 +40,20 @@ export default function AdminPage() {
       setProjects(data || [])
     } catch (err) {
       console.error('Error loading projects:', err)
+    }
+  }
+
+  const loadTestimonials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setTestimonials(data || [])
+    } catch (err) {
+      console.error('Error loading testimonials:', err)
     }
   }
 
@@ -188,13 +206,77 @@ export default function AdminPage() {
 
   const handleAddNew = () => {
     setIsAddingNew(true)
-    setEditingProject({
-      id: 0,
-      title: '',
-      description: '',
-      image_url: '',
-      images: []
-    })
+    if (activeTab === 'projects') {
+      setEditingProject({
+        id: 0,
+        title: '',
+        description: '',
+        image_url: '',
+        images: []
+      })
+    } else {
+      setEditingTestimonial({
+        id: 0,
+        name: '',
+        text: '',
+        rating: 5
+      })
+    }
+  }
+
+  // Testimonial management functions
+  const handleSaveTestimonial = async (testimonial: Omit<Testimonial, 'id' | 'created_at'> & { id?: number }) => {
+    setLoading(true)
+    try {
+      if (isAddingNew) {
+        const { error } = await supabase
+          .from('testimonials')
+          .insert([{
+            name: testimonial.name,
+            text: testimonial.text,
+            rating: testimonial.rating || 5
+          }])
+
+        if (error) throw error
+        setIsAddingNew(false)
+      } else if (testimonial.id) {
+        const { error } = await supabase
+          .from('testimonials')
+          .update({
+            name: testimonial.name,
+            text: testimonial.text,
+            rating: testimonial.rating || 5
+          })
+          .eq('id', testimonial.id)
+
+        if (error) throw error
+      }
+
+      await loadTestimonials()
+      setEditingTestimonial(null)
+    } catch (err) {
+      console.error('Error saving testimonial:', err)
+      alert('שגיאה בשמירת ההמלצה')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteTestimonial = async (id: number) => {
+    if (!confirm('האם אתה בטוח שברצונך למחוק המלצה זו?')) return
+
+    try {
+      const { error } = await supabase
+        .from('testimonials')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      await loadTestimonials()
+    } catch (err) {
+      console.error('Error deleting testimonial:', err)
+      alert('שגיאה במחיקת ההמלצה')
+    }
   }
 
   if (!isAuthenticated) {
@@ -248,13 +330,13 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black">ממשק ניהול פרויקטים</h1>
+            <h1 className="text-3xl font-black">ממשק ניהול</h1>
             <p className="text-slate-600">ארזולר - שיפוצים ובנייה</p>
           </div>
           <div className="flex gap-4">
             <Button onClick={handleAddNew} className="bg-[#f0001c] hover:bg-[#d00018]">
               <Plus className="w-4 h-4 ml-2" />
-              הוסף פרויקט חדש
+              {activeTab === 'projects' ? 'הוסף פרויקט חדש' : 'הוסף המלצה חדשה'}
             </Button>
             <Button 
               onClick={() => {
@@ -269,7 +351,27 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            onClick={() => setActiveTab('projects')}
+            variant={activeTab === 'projects' ? 'default' : 'outline'}
+            className={activeTab === 'projects' ? 'bg-[#f0001c] hover:bg-[#d00018]' : ''}
+          >
+            פרויקטים ({projects.length})
+          </Button>
+          <Button
+            onClick={() => setActiveTab('testimonials')}
+            variant={activeTab === 'testimonials' ? 'default' : 'outline'}
+            className={activeTab === 'testimonials' ? 'bg-[#f0001c] hover:bg-[#d00018]' : ''}
+          >
+            המלצות ({testimonials.length})
+          </Button>
+        </div>
+
+        {/* Projects Tab */}
+        {activeTab === 'projects' && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden">
               <div className="relative w-full aspect-video bg-slate-100 flex items-center justify-center">
@@ -305,8 +407,49 @@ export default function AdminPage() {
             </Card>
           ))}
         </div>
+        )}
 
-        {/* Edit/Add Modal */}
+        {/* Testimonials Tab */}
+        {activeTab === 'testimonials' && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testimonials.map((testimonial) => (
+              <Card key={testimonial.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold text-slate-900">{testimonial.name}</h3>
+                    <div className="flex gap-0.5">
+                      {[...Array(testimonial.rating || 5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-slate-600 text-sm mb-4 line-clamp-4">{testimonial.text}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setEditingTestimonial(testimonial)}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <Edit2 className="w-4 h-4 ml-2" />
+                      ערוך
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteTestimonial(testimonial.id!)}
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Edit/Add Project Modal */}
         {editingProject && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -456,6 +599,97 @@ export default function AdminPage() {
                   <Button
                     onClick={() => {
                       setEditingProject(null)
+                      setIsAddingNew(false)
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    ביטול
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Edit/Add Testimonial Modal */}
+        {editingTestimonial && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>{isAddingNew ? 'הוסף המלצה חדשה' : 'ערוך המלצה'}</CardTitle>
+                <button
+                  onClick={() => {
+                    setEditingTestimonial(null)
+                    setIsAddingNew(false)
+                  }}
+                  className="p-2 hover:bg-slate-100 rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">שם הלקוח</label>
+                  <input
+                    type="text"
+                    value={editingTestimonial.name}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#f0001c] focus:border-transparent"
+                    placeholder="לדוגמה: יוסי כהן"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">דירוג</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        onClick={() => setEditingTestimonial({ ...editingTestimonial, rating })}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star 
+                          className={`w-8 h-8 ${
+                            rating <= (editingTestimonial.rating || 5)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-slate-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">טקסט ההמלצה</label>
+                  <textarea
+                    value={editingTestimonial.text}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, text: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#f0001c] focus:border-transparent h-32"
+                    placeholder='לדוגמה: "עבודה מקצועית ומדויקת, ממליץ בחום!"'
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => handleSaveTestimonial(editingTestimonial)}
+                    className="flex-1 bg-[#f0001c] hover:bg-[#d00018]"
+                    disabled={loading || !editingTestimonial.name || !editingTestimonial.text}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                        שומר...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 ml-2" />
+                        שמור
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingTestimonial(null)
                       setIsAddingNew(false)
                     }}
                     variant="outline"
