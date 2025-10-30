@@ -267,10 +267,14 @@ export default function HandymanLandingPage() {
                 onClick={() => setSelectedProject(project.id)}
               >
                 <div className="relative w-full aspect-video overflow-hidden bg-slate-100 flex items-center justify-center">
-                  <img 
+                  <Image 
                     src={project.image_url} 
-                    alt={project.title} 
-                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                    alt={project.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    quality={85}
                   />
                 </div>
                 <div className="p-4 bg-white">
@@ -329,10 +333,14 @@ export default function HandymanLandingPage() {
                     {/* Image Gallery */}
                     <div className="relative flex-shrink-0 p-4 pb-0">
                       <div className="relative w-full h-[40vh] flex items-center justify-center rounded-xl overflow-hidden">
-                        <img 
+                        <Image 
                           src={allImages[selectedImageIndex]} 
                           alt={`${project.title} - תמונה ${selectedImageIndex + 1}`}
-                          className="w-full h-full object-contain p-2"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 672px"
+                          className="object-contain p-2"
+                          quality={90}
+                          priority
                         />
                       </div>
 
