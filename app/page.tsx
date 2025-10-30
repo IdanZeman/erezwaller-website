@@ -4,52 +4,105 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Phone, Mail, ShieldCheck, Hammer, Wrench, Ruler, Paintbrush, Building2, ChevronLeft, Menu, X, Truck } from 'lucide-react'
-import { useState } from 'react'
+import { Phone, Mail, ShieldCheck, Hammer, Wrench, Ruler, Paintbrush, Building2, ChevronLeft, ChevronRight, Menu, X, Truck } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase, type Project } from '@/lib/supabase'
 
-// Project data
-const projects = [
+// Default project data (fallback)
+const defaultProjects: Project[] = [
   {
     id: 1,
     title: 'שיפוץ דירה בתל אביב',
     description: 'שיפוץ מקיף של דירת 4 חדרים כולל פירוק, חשמל, אינסטלציה, ריצוף וצביעה. העבודה הושלמה תוך 3 חודשים עם שביעות רצון מלאה של הלקוח.',
-    image: '/images/2_edited.avif',
+    image_url: '/images/2_edited.avif',
+    images: []
   },
   {
     id: 2,
     title: 'שדרוג מטבח מודרני',
     description: 'החלפת מטבח ישן במטבח מודרני עם ארונות חדשים, משטחי שיש, תאורה מעוצבת ומכשירי חשמל משולבים. פרויקט שהשלים תוך חודש.',
-    image: '/images/iStock-1466874093-1.jpg',
+    image_url: '/images/iStock-1466874093-1.jpg',
+    images: []
   },
   {
     id: 3,
     title: 'שיפוץ חדר אמבטיה',
     description: 'פרויקט שיפוץ מלא של חדר אמבטיה כולל אריחים איטלקיים, מקלחון זכוכית, כלים סניטריים חדשים ומערכת תאורה חכמה.',
-    image: '/images/iStock-901157728-1.jpg',
+    image_url: '/images/iStock-901157728-1.jpg',
+    images: []
   },
   {
     id: 4,
     title: 'בניית מרפסת שמש',
     description: 'בניית מרפסת שמש מעץ איפאה עם גג רעפים, תריסי אלומיניום ורצפת דק. העבודה כללה גם חיבור חשמל ותאורה חיצונית.',
-    image: '/images/ritzliserg001.jpg',
+    image_url: '/images/ritzliserg001.jpg',
+    images: []
   },
   {
     id: 5,
     title: 'שיפוץ משרדים',
     description: 'שיפוץ ועיצוב מחדש של משרדים בשטח 200 מ"ר כולל קירות גבס, חשמל, רשת תקשורת, ריצוף ועבודות צביעה מקצועיות.',
-    image: '/images/שיפוצים-3.jpg',
+    image_url: '/images/שיפוצים-3.jpg',
+    images: []
   },
   {
     id: 6,
     title: 'שיפוץ בית פרטי',
     description: 'שיפוץ מקיף של בית פרטי דו-משפחתי כולל הרחבה, שדרוג מערכות, חיפוי אבן טבעית ועיצוב גינה.',
-    image: '/images/2_edited.avif',
+    image_url: '/images/2_edited.avif',
+    images: []
   },
 ]
 
 export default function HandymanLandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<number | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [projects, setProjects] = useState(defaultProjects)
+
+  // Auto-advance images every 2 seconds
+  useEffect(() => {
+    if (selectedProject === null) return
+
+    const project = projects.find(p => p.id === selectedProject)
+    if (!project) return
+
+    const allImages = [project.image_url, ...(project.images || [])]
+    if (allImages.length <= 1) return // Don't auto-advance if only 1 image
+
+    const interval = setInterval(() => {
+      setSelectedImageIndex((prev) => 
+        prev === allImages.length - 1 ? 0 : prev + 1
+      )
+    }, 5000) // Change every 2 seconds
+
+    return () => clearInterval(interval)
+  }, [selectedProject, selectedImageIndex, projects])
+
+  // Load projects from Supabase
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error loading projects:', error)
+          return
+        }
+        
+        if (data && data.length > 0) {
+          setProjects(data)
+        }
+      } catch (err) {
+        console.error('Error:', err)
+      }
+    }
+
+    loadProjects()
+  }, [])
 
   return (
     <div id="top" dir="rtl" lang="he" className="min-h-screen bg-white text-slate-900 antialiased">
@@ -210,14 +263,16 @@ export default function HandymanLandingPage() {
             {projects.map((project) => (
               <div 
                 key={project.id} 
-                className="group overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all cursor-pointer"
+                className="group overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all cursor-pointer bg-white"
                 onClick={() => setSelectedProject(project.id)}
               >
-                <img 
-                  src={project.image} 
-                  alt={project.title} 
-                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300" 
-                />
+                <div className="relative w-full aspect-video overflow-hidden bg-slate-100 flex items-center justify-center">
+                  <img 
+                    src={project.image_url} 
+                    alt={project.title} 
+                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300" 
+                  />
+                </div>
                 <div className="p-4 bg-white">
                   <h3 className="text-lg font-bold text-slate-900">{project.title}</h3>
                 </div>
@@ -234,55 +289,121 @@ export default function HandymanLandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4"
-            onClick={() => setSelectedProject(null)}
+            className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4"
+            onClick={() => {
+              setSelectedProject(null)
+              setSelectedImageIndex(0)
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col relative"
               onClick={(e) => e.stopPropagation()}
             >
               {(() => {
                 const project = projects.find(p => p.id === selectedProject)
                 if (!project) return null
                 
+                // Create gallery array: main image + additional images
+                const allImages = [
+                  project.image_url,
+                  ...(project.images || [])
+                ]
+                
                 return (
                   <>
                     {/* Close Button */}
                     <button
-                      onClick={() => setSelectedProject(null)}
-                      className="absolute top-4 left-4 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                      onClick={() => {
+                        setSelectedProject(null)
+                        setSelectedImageIndex(0)
+                      }}
+                      className="absolute top-3 left-3 bg-white hover:bg-slate-100 rounded-full p-2 shadow-lg transition-all z-20"
                       aria-label="סגור"
                     >
-                      <X className="w-6 h-6" />
+                      <X className="w-5 h-5" />
                     </button>
 
-                    {/* Project Image */}
-                    <div className="relative h-96">
-                      <img 
-                        src={project.image} 
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                      />
+                    {/* Image Gallery */}
+                    <div className="relative flex-shrink-0 p-4 pb-0">
+                      <div className="relative w-full h-[40vh] flex items-center justify-center rounded-xl overflow-hidden">
+                        <img 
+                          src={allImages[selectedImageIndex]} 
+                          alt={`${project.title} - תמונה ${selectedImageIndex + 1}`}
+                          className="w-full h-full object-contain p-2"
+                        />
+                      </div>
+
+                      {/* Navigation Arrows (only if multiple images) */}
+                      {allImages.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedImageIndex((prev) => 
+                                prev === 0 ? allImages.length - 1 : prev - 1
+                              )
+                            }}
+                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                            aria-label="תמונה קודמת"
+                          >
+                            <ChevronLeft className="w-6 h-6" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedImageIndex((prev) => 
+                                prev === allImages.length - 1 ? 0 : prev + 1
+                              )
+                            }}
+                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all"
+                            aria-label="תמונה הבאה"
+                          >
+                            <ChevronRight className="w-6 h-6" />
+                          </button>
+
+                          {/* Image Counter */}
+                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                            {selectedImageIndex + 1} / {allImages.length}
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* Project Details */}
-                    <div className="p-8">
-                      <h2 className="text-3xl font-black mb-4 text-slate-900">{project.title}</h2>
-                      <p className="text-lg text-slate-700 leading-relaxed mb-6">{project.description}</p>
-                      
-                      <div className="border-t border-slate-200 pt-6">
-                        <a href="#contact">
-                          <Button 
-                            className="bg-[#f0001c] hover:bg-[#d00018] text-white w-full md:w-auto"
-                            onClick={() => setSelectedProject(null)}
-                          >
-                            רוצה פרויקט דומה? צור קשר
-                          </Button>
-                        </a>
+                    {/* Thumbnail Gallery (only if multiple images) */}
+                    {allImages.length > 1 && (
+                      <div className="px-4 pt-3 pb-2 flex-shrink-0 overflow-hidden">
+                        <div className="flex gap-2 justify-center flex-wrap">
+                          {allImages.map((imageUrl, index) => (
+                            <button
+                              key={index}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedImageIndex(index)
+                              }}
+                              className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+                                selectedImageIndex === index 
+                                  ? 'border-[#f0001c] scale-105' 
+                                  : 'border-slate-200 hover:border-slate-400'
+                              }`}
+                            >
+                              <img 
+                                src={imageUrl} 
+                                alt={`תמונה ממוזערת ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
                       </div>
+                    )}
+
+                    {/* Project Details */}
+                    <div className="p-4 flex-shrink-0 border-t border-slate-100">
+                      <h2 className="text-2xl font-black mb-2 text-slate-900 tracking-tight">{project.title}</h2>
+                      <p className="text-sm text-slate-700 leading-relaxed mb-3 line-clamp-3">{project.description}</p>
                     </div>
                   </>
                 )

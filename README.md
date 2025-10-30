@@ -10,6 +10,9 @@ A production-ready Next.js 14 landing page for a Hebrew handyman/contractor busi
 - **shadcn/ui** – Beautiful, accessible UI components
 - **Framer Motion** – Smooth animations
 - **Lucide Icons** – Modern icon library
+- **Supabase Integration** – Cloud database and file storage
+- **Admin Panel** – Manage projects with authentication at `/admin`
+- **Image Gallery** – Multiple images per project with carousel
 - **Jest & React Testing Library** – Comprehensive testing setup
 - **ESLint & Prettier** – Code quality and formatting
 
@@ -159,10 +162,10 @@ npm test
 
 ### Colors
 
-The site uses Tailwind's default palette with custom amber accents. To change:
+The site uses a red accent color (`#f0001c`) for branding. To change:
 
-1. Edit `tailwind.config.ts` to add custom colors
-2. Update color classes in `app/page.tsx` (e.g., `bg-amber-500` → `bg-blue-500`)
+1. Edit color classes in `app/page.tsx` (e.g., `bg-[#f0001c]` → `bg-blue-600`)
+2. Update hover states accordingly
 
 ### Typography
 
@@ -170,6 +173,38 @@ The site uses system fonts with RTL support. To add custom fonts:
 
 1. Add font import to `app/layout.tsx`
 2. Update Tailwind config with font family
+
+## 🗃️ Database & Storage
+
+This project uses **Supabase** (free tier) for:
+- PostgreSQL database for projects
+- File storage for images
+- Real-time updates
+
+### Setup Instructions
+
+See **[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** for complete setup guide.
+
+Quick start:
+1. Create free Supabase account
+2. Run SQL migrations from `/sql` folder
+3. Add credentials to `.env.local`
+4. Access admin panel at `/admin`
+
+### Multiple Images Feature
+
+Projects now support image galleries! See:
+- **[GALLERY_UPDATE_SUMMARY_HE.md](./GALLERY_UPDATE_SUMMARY_HE.md)** - Quick overview (Hebrew)
+- **[GALLERY_GUIDE_HE.md](./GALLERY_GUIDE_HE.md)** - User guide (Hebrew)
+- **[MULTIPLE_IMAGES.md](./MULTIPLE_IMAGES.md)** - Technical docs (English)
+
+## 📁 Additional Documentation
+
+- `README_HE.md` - Hebrew version of this README
+- `SUPABASE_SETUP.md` - Database setup instructions
+- `GALLERY_UPDATE_SUMMARY_HE.md` - Image gallery feature overview
+- `GALLERY_GUIDE_HE.md` - User guide for image galleries
+- `MULTIPLE_IMAGES.md` - Technical documentation for developers
 
 ## 📄 License
 
