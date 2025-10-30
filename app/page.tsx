@@ -1,7 +1,6 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Phone, Mail, ShieldCheck, Hammer, Wrench, Ruler, Paintbrush, Building2, ChevronLeft, ChevronRight, Menu, X, Truck } from 'lucide-react'
@@ -191,12 +190,10 @@ export default function HandymanLandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[600px] flex items-center">
         <div className="absolute inset-0">
-          <Image 
+          <img 
             src="/Construction.avif" 
             alt="אתר עבודה" 
-            fill
-            className="object-cover"
-            priority
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-slate-900/60" />
         </div>
@@ -267,14 +264,11 @@ export default function HandymanLandingPage() {
                 onClick={() => setSelectedProject(project.id)}
               >
                 <div className="relative w-full aspect-video overflow-hidden bg-slate-100 flex items-center justify-center">
-                  <Image 
+                  <img 
                     src={project.image_url} 
-                    alt={project.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-contain group-hover:scale-105 transition-transform duration-300"
+                    alt={project.title} 
+                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
-                    quality={85}
                   />
                 </div>
                 <div className="p-4 bg-white">
@@ -333,14 +327,10 @@ export default function HandymanLandingPage() {
                     {/* Image Gallery */}
                     <div className="relative flex-shrink-0 p-4 pb-0">
                       <div className="relative w-full h-[40vh] flex items-center justify-center rounded-xl overflow-hidden">
-                        <Image 
+                        <img 
                           src={allImages[selectedImageIndex]} 
                           alt={`${project.title} - תמונה ${selectedImageIndex + 1}`}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 672px"
-                          className="object-contain p-2"
-                          quality={90}
-                          priority
+                          className="w-full h-full object-contain p-2"
                         />
                       </div>
 
@@ -515,11 +505,9 @@ export default function HandymanLandingPage() {
       <div className="fixed bottom-6 right-6 z-50">
         <a href="https://wa.me/972549250567" target="_blank" rel="noopener noreferrer" className="block">
           <div className="w-14 h-14 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 bg-[#25D366] flex items-center justify-center">
-            <Image 
+            <img 
               src="/icons8-whatsapp-48.svg" 
               alt="WhatsApp" 
-              width={32}
-              height={32}
               className="w-8 h-8"
             />
           </div>
